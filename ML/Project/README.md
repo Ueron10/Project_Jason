@@ -147,5 +147,4 @@ The analysis classifies properties into categories such as:
 
 ### Visualization Files
 - `clustering_visualizations.png`: Main clustering visualizations
-- `cluster_summary.png`: Cluster summary plots
-- `elbow_method_analysis.png`: Elbow method and silhouette analysis
+- `elbow_method_analysis.png`: Elbow method analysis

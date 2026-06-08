@@ -124,11 +124,9 @@ def generate_insights(cluster_analysis_df, clustering_metrics):
     insights = []
     
     # Overall clustering performance
-    silhouette_score = clustering_metrics[clustering_metrics['metric'] == 'silhouette_score']['value'].iloc[0]
     inertia = clustering_metrics[clustering_metrics['metric'] == 'inertia']['value'].iloc[0]
     
     insights.append(f"Clustering Performance:")
-    insights.append(f"- Silhouette Score: {silhouette_score:.4f}")
     insights.append(f"- Inertia: {inertia:.2f}")
     insights.append(f"- Number of Clusters: {len(cluster_analysis_df)}")
     
@@ -149,7 +147,7 @@ def generate_insights(cluster_analysis_df, clustering_metrics):
     size_analysis = cluster_analysis_df[['size_mean', 'category']].sort_values('size_mean')
     insights.append(f"\nSize Preferences:")
     for _, row in size_analysis.iterrows():
-        insights.append(f"- {row['category']}: Avg Size {row['size_mean']:.0f} m²")
+        insights.append(f"- {row['category']}: Avg Size {row['size_mean']:.0f} m2")
     
     # Market gaps and opportunities
     insights.append(f"\nMarket Insights:")
@@ -185,8 +183,6 @@ def create_detailed_report(cluster_analysis_df, insights, clustering_metrics):
     report.append("-" * 20)
     report.append(f"Total Properties Analyzed: {cluster_analysis_df['count'].sum()}")
     report.append(f"Number of Segments Identified: {len(cluster_analysis_df)}")
-    silhouette_score = clustering_metrics[clustering_metrics['metric'] == 'silhouette_score']['value'].iloc[0]
-    report.append(f"Clustering Quality (Silhouette Score): {silhouette_score:.4f}")
     report.append("")
     
     # Cluster Details
@@ -199,9 +195,9 @@ def create_detailed_report(cluster_analysis_df, insights, clustering_metrics):
         report.append(f"  Properties: {cluster['count']} ({cluster['percentage']:.1f}%)")
         report.append(f"  Price Range: Rp {cluster['price_min']/1e9:.2f}B - Rp {cluster['price_max']/1e9:.2f}B")
         report.append(f"  Average Price: Rp {cluster['price_mean']/1e9:.2f}B")
-        report.append(f"  Size Range: {cluster['size_min']:.0f} - {cluster['size_max']:.0f} m²")
-        report.append(f"  Average Size: {cluster['size_mean']:.0f} m²")
-        report.append(f"  Price per m²: Rp {cluster['price_per_m2_mean']/1e6:.1f}M")
+        report.append(f"  Size Range: {cluster['size_min']:.0f} - {cluster['size_max']:.0f} m2")
+        report.append(f"  Average Size: {cluster['size_mean']:.0f} m2")
+        report.append(f"  Price per m2: Rp {cluster['price_per_m2_mean']/1e6:.1f}M")
         report.append("")
     
     # Insights
@@ -234,7 +230,7 @@ def create_detailed_report(cluster_analysis_df, insights, clustering_metrics):
     # Pricing strategy recommendations
     recommendations.append("Pricing Strategy:")
     avg_price_per_m2 = cluster_analysis_df['price_per_m2_mean'].mean()
-    recommendations.append(f"  - Market average price per m²: Rp {avg_price_per_m2/1e6:.1f}M")
+    recommendations.append(f"  - Market average price per m2: Rp {avg_price_per_m2/1e6:.1f}M")
     recommendations.append("  - Use cluster-specific pricing for targeted marketing")
     
     for rec in recommendations:

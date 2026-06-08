@@ -2,7 +2,6 @@ import pandas as pd
 import numpy as np
 import pickle
 from sklearn.cluster import KMeans
-from sklearn.metrics import silhouette_score
 
 def load_normalized_data():
     """Load normalized features for clustering"""
@@ -34,15 +33,13 @@ def perform_kmeans_clustering(features, n_clusters):
     
     # Calculate metrics
     inertia = kmeans.inertia_
-    silhouette_avg = silhouette_score(features, cluster_labels)
     
     print(f"Clustering completed!")
     print(f"Inertia: {inertia:.2f}")
-    print(f"Silhouette Score: {silhouette_avg:.4f}")
     
-    return kmeans, cluster_labels, cluster_centers, inertia, silhouette_avg
+    return kmeans, cluster_labels, cluster_centers, inertia
 
-def save_clustering_results(kmeans, cluster_labels, inertia, silhouette_avg):
+def save_clustering_results(kmeans, cluster_labels, inertia):
     """Save clustering results and model"""
     # Save cluster labels
     cluster_results = pd.DataFrame({
@@ -56,8 +53,8 @@ def save_clustering_results(kmeans, cluster_labels, inertia, silhouette_avg):
     
     # Save clustering metrics
     metrics = pd.DataFrame({
-        'metric': ['inertia', 'silhouette_score'],
-        'value': [inertia, silhouette_avg]
+        'metric': ['inertia'],
+        'value': [inertia]
     })
     metrics.to_csv('../output/clustering_metrics.csv', index=False)
     
@@ -77,16 +74,15 @@ def main():
     optimal_k = load_optimal_k()
     
     # Perform K-Means clustering
-    kmeans, cluster_labels, cluster_centers, inertia, silhouette_avg = perform_kmeans_clustering(
+    kmeans, cluster_labels, cluster_centers, inertia = perform_kmeans_clustering(
         features_normalized, optimal_k
     )
     
     # Save results
-    save_clustering_results(kmeans, cluster_labels, inertia, silhouette_avg)
+    save_clustering_results(kmeans, cluster_labels, inertia)
     
     print(f"\n=== K-MEANS CLUSTERING COMPLETE ===")
     print(f"Number of clusters: {optimal_k}")
-    print(f"Silhouette Score: {silhouette_avg:.4f}")
     
     return kmeans, cluster_labels, cluster_centers
 
