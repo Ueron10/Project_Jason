@@ -1,17 +1,16 @@
-# Sentiment Analysis - IMDB Movie Reviews
+# Sentiment Analysis - Thread App Reviews
 
-Project Deep Learning untuk analisis sentimen menggunakan CNN + VADER.
+Project Deep Learning untuk analisis sentimen menggunakan BERT.
 
-**Dataset**: [IMDB 50K Movie Reviews](https://www.kaggle.com/datasets/lakshmi25npathi/imdb-dataset-of-50k-movie-reviews)
+**Dataset**: Thread App Reviews (32,910 reviews from Google Play and App Store)
 
 ---
 
 ## Panduan Setup Manual
 
 ### 1. Download Dataset
-1. Download dari Kaggle: [IMDB Dataset](https://www.kaggle.com/datasets/lakshmi25npathi/imdb-dataset-of-50k-movie-reviews)
-2. Extract file zip
-3. Copy `IMDB Dataset.csv` ke folder `Data/`
+1. Download Thread app reviews dataset
+2. Copy `threads_reviews.csv` ke folder `Data/`
 
 ### 2. Install Dependencies
 ```bash
@@ -22,32 +21,32 @@ pip install -r requirements.txt
 
 ## Running Manual
 
+### Quick Start (Full Pipeline)
+```bash
+cd Scripts
+python main.py                   # Run complete pipeline: preprocessing + training
+```
+
 ### Step 1: Preprocessing
 ```bash
 cd Scripts/1Preprocessing
-python 2preprocesing.py    # Cleaning text
-python 3labeling.py         # VADER labeling
-python 4token_padding.py    # Tokenization
-python 5splitting_data.py   # Split train/test
+python 01_clean_text.py         # Cleaning text
+python 02_prepare_labels.py     # Convert rating to sentiment
+python 03_tokenize.py           # BERT tokenization
+python 04_split_data.py         # Split train/test
+python 05_data_augmentation.py  # Optional: Data augmentation
 ```
 
 ### Step 2: Training
 ```bash
-cd ../2Traning
-python 1_model_architecture.py   # Build model
-python 2_model_training.py       # Training (target >80%)
-python 4_model_save.py           # Save model
+cd ../2Training
+python 01_build_and_train.py    # Build BERT model and train
 ```
 
-### Step 3: Prediction
+### Flask Web App
 ```bash
-cd ../3Prediction
-python 5_model_prediction.py     # Input text untuk prediksi
-```
-
-### Alternatif: Streamlit App
-```bash
-streamlit run app.py              # Web UI untuk prediksi
+cd ../..
+python app.py                   # Web UI untuk prediksi (http://localhost:5000)
 ```
 
 ---
@@ -59,20 +58,24 @@ DL/
 ├── Data/               # Dataset (download manual)
 ├── Scripts/
 │   ├── 1Preprocessing/ # Cleaning, labeling, tokenization
-│   ├── 2Traning/       # Training pipeline
-│   └── 3Prediction/    # Inference
+│   ├── 2Training/      # Training pipeline
+│   └── main.py         # Full pipeline runner
 ├── Models/             # Saved models
-└── Outputs/            # Tokenizer, metrics
+├── Outputs/            # Tokenizer, metrics
+├── templates/         # Flask HTML templates
+└── app.py             # Flask web app
 ```
 
 ---
 
-## VADER Labeling
+## Rating to Sentiment Conversion
 
-**Threshold** (di `3labeling.py`):
-- `positive`: compound >= 0.50
-- `negative`: compound <= -0.30
-- `neutral`: lainnya
+**Threshold** (di `02_prepare_labels.py`):
+- `positive`: rating >= 4
+- `negative`: rating <= 2
+- `neutral`: rating = 3
+
+**Total Classes**: 3 (negative, neutral, positive)
 
 ---
 
@@ -80,5 +83,13 @@ DL/
 
 File besar (CSV, model) sudah di `.gitignore`. Jangan commit:
 - `Data/*.csv`
-- `Models/*.keras`
-- `Outputs/*.npy`
+- `Models/*`
+- `Outputs/*.npy` / `Outputs/*.pkl`
+
+## Model Architecture
+
+- **Framework**: PyTorch
+- **Model**: BERT Large (bert-large-uncased)
+- **Classes**: 3 (negative, neutral, positive)
+- **Max Sequence Length**: 256
+- **Optimizer**: AdamW with warmup scheduler

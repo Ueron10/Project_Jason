@@ -10,11 +10,11 @@ data_dir = os.path.join(project_root, "Data")
 outputs_dir = os.path.join(project_root, "Outputs")
 
 # Load data
-df = pd.read_csv(os.path.join(data_dir, "imdb_reviews_labeled.csv"))
+df = pd.read_csv(os.path.join(data_dir, "threads_reviews_labeled.csv"))
 X_input_ids = np.load(os.path.join(outputs_dir, "X_input_ids.npy"))
 X_attention_mask = np.load(os.path.join(outputs_dir, "X_attention_mask.npy"))
 
-# Encode labels with fixed order: negative=0, positive=1
+# Encode labels with fixed order: negative=0, neutral=1, positive=2
 y_text = df['sentiment'].values
 
 # Use LabelEncoder but ensure consistent mapping
@@ -26,25 +26,24 @@ print("Label encoding mapping:")
 for i, label in enumerate(label_encoder.classes_):
     print(f"  {i} = {label}")
 
-# Ensure order is [negative, positive], if not, manually map
-if len(label_encoder.classes_) == 2:
-    if label_encoder.classes_[0] == 'positive' and label_encoder.classes_[1] == 'negative':
-        # Swap encoding: make negative=0, positive=1
-        print("Warning: Encoding order reversed, swapping...")
-        y = 1 - y  # Flip 0 and 1
-        # Save custom label order
-        custom_classes = np.array(['negative', 'positive'])
-        np.save(os.path.join(outputs_dir, "label_encoding.npy"), custom_classes)
-    else:
-        # Order is correct (negative=0, positive=1)
-        np.save(os.path.join(outputs_dir, "label_encoding.npy"), label_encoder.classes_)
+# Ensure order is [negative, neutral, positive]
+desired_order = ['negative', 'neutral', 'positive']
+if len(label_encoder.classes_) == 3:
+    # Map to desired order
+    label_mapping = {label: idx for idx, label in enumerate(desired_order)}
+    y = np.array([label_mapping[label] for label in y_text])
+    np.save(os.path.join(outputs_dir, "label_encoding.npy"), np.array(desired_order))
+    print(f"Label order set to: {desired_order}")
+else:
+    # Save whatever order we have
+    np.save(os.path.join(outputs_dir, "label_encoding.npy"), label_encoder.classes_)
 
 # Split parameters
 train_ratio = 0.8
 np.random.seed(42)
-indices = np.random.permutation(len(X))
+indices = np.random.permutation(len(X_input_ids))
 
-train_size = int(len(X) * train_ratio)
+train_size = int(len(X_input_ids) * train_ratio)
 train_idx = indices[:train_size]
 test_idx = indices[train_size:]
 

@@ -20,7 +20,7 @@ except LookupError:
     nltk.download('stopwords')
 
 # Load data
-df = pd.read_csv(os.path.join(data_dir, "IMDB Dataset.csv"))
+df = pd.read_csv(os.path.join(data_dir, "threads_reviews.csv"))
 
 # Inisialisasi - Optimized for BERT (keep more context)
 # BERT performs better with less aggressive preprocessing
@@ -123,13 +123,13 @@ def preprocess_text(text):
 
 # Terapkan preprocessing
 print("Preprocessing text data...")
-df['clean_text'] = df['review'].apply(preprocess_text)
+df['clean_text'] = df['review_description'].apply(preprocess_text)
 
 # Simpan hasil
-df.to_csv(os.path.join(data_dir, "imdb_reviews_clean.csv"), index=False, encoding='utf-8-sig')
+df.to_csv(os.path.join(data_dir, "threads_reviews_clean.csv"), index=False, encoding='utf-8-sig')
 
 print("Preprocessing selesai!")
 print(f"  Total samples: {len(df)}")
-print(f"  Output: imdb_reviews_clean.csv")
+print(f"  Output: threads_reviews_clean.csv")
 print("\nSample:")
-print(df[['review', 'clean_text', 'sentiment']].head())
+print(df[['review_description', 'clean_text', 'rating']].head())

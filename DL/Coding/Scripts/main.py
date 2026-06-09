@@ -39,8 +39,7 @@ def main():
     print("PIPELINE COMPLETED SUCCESSFULLY!")
     print("="*60)
     print("\nNext steps:")
-    print("  1. Run prediction: python Scripts/3Prediction/01_predict.py")
-    print("  2. Start Streamlit: streamlit run app.py")
+    print("  1. Start Flask app: python app.py")
     return 0
 
 if __name__ == "__main__":

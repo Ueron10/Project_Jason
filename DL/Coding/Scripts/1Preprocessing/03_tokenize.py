@@ -12,7 +12,7 @@ outputs_dir = os.path.join(project_root, "Outputs")
 os.makedirs(outputs_dir, exist_ok=True)
 
 # Load data
-df = pd.read_csv(os.path.join(data_dir, "imdb_reviews_labeled.csv"))
+df = pd.read_csv(os.path.join(data_dir, "threads_reviews_labeled.csv"))
 texts = df['clean_text'].fillna("").astype(str)
 
 print(f"Tokenizing {len(texts)} texts with BERT...")
