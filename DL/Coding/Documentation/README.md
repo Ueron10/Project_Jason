@@ -1,6 +1,6 @@
 # Sentiment Analysis - Thread App Reviews
 
-Project Deep Learning untuk analisis sentimen menggunakan BERT.
+Project Deep Learning untuk analisis sentimen menggunakan LSTM.
 
 **Dataset**: Thread App Reviews (32,910 reviews from Google Play and App Store)
 
@@ -30,17 +30,13 @@ python main.py                   # Run complete pipeline: preprocessing + traini
 ### Step 1: Preprocessing
 ```bash
 cd Scripts/1Preprocessing
-python 01_clean_text.py         # Cleaning text
-python 02_prepare_labels.py     # Convert rating to sentiment
-python 03_tokenize.py           # BERT tokenization
-python 04_split_data.py         # Split train/test
-python 05_data_augmentation.py  # Optional: Data augmentation
+python preprocessing.py         # Complete preprocessing (cleaning, labeling, tokenization, splitting)
 ```
 
 ### Step 2: Training
 ```bash
 cd ../2Training
-python 01_build_and_train.py    # Build BERT model and train
+python 01_build_and_train.py    # Build LSTM model and train
 ```
 
 ### Flask Web App
@@ -70,7 +66,7 @@ DL/
 
 ## Rating to Sentiment Conversion
 
-**Threshold** (di `02_prepare_labels.py`):
+**Threshold**:
 - `positive`: rating >= 4
 - `negative`: rating <= 2
 - `neutral`: rating = 3
@@ -88,8 +84,8 @@ File besar (CSV, model) sudah di `.gitignore`. Jangan commit:
 
 ## Model Architecture
 
-- **Framework**: PyTorch
-- **Model**: BERT Large (bert-large-uncased)
+- **Framework**: TensorFlow/Keras
+- **Model**: Bidirectional LSTM
 - **Classes**: 3 (negative, neutral, positive)
 - **Max Sequence Length**: 256
-- **Optimizer**: AdamW with warmup scheduler
+- **Optimizer**: Adam

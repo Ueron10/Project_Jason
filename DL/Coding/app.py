@@ -5,22 +5,19 @@ import re
 import os
 import nltk
 import pandas as pd
-import torch
-from transformers import BertForSequenceClassification, BertTokenizer
+import tensorflow as tf
+from tensorflow.keras.preprocessing.sequence import pad_sequences
 
-# Download NLTK resources
 try:
     nltk.data.find('tokenizers/punkt')
 except LookupError:
     nltk.download('punkt', quiet=True)
     nltk.download('stopwords', quiet=True)
 
-# Setup paths
 project_root = os.path.dirname(os.path.abspath(__file__))
 models_dir = os.path.join(project_root, "Models")
 outputs_dir = os.path.join(project_root, "Outputs")
 
-# Initialize preprocessing tools - Optimized for BERT
 minimal_stopwords = {'a', 'an', 'the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
                     'of', 'with', 'by', 'from', 'up', 'down', 'out', 'over', 'under',
                     'again', 'further', 'then', 'once', 'here', 'there', 'when', 'where',
@@ -34,7 +31,6 @@ minimal_stopwords = {'a', 'an', 'the', 'and', 'or', 'but', 'in', 'on', 'at', 'to
                     "shan't", 'shouldn', "shouldn't", 'wasn', "wasn't", 'weren', "weren't",
                     'won', "won't", 'wouldn', "wouldn't"}
 
-# Global variables for model artifacts
 model = None
 tokenizer = None
 label_classes = None
@@ -42,16 +38,13 @@ label_classes = None
 def load_artifacts():
     global model, tokenizer, label_classes
     if model is None:
-        model = BertForSequenceClassification.from_pretrained(os.path.join(models_dir, "bert_model"))
-        model.eval()
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        model.to(device)
-        tokenizer = BertTokenizer.from_pretrained(os.path.join(models_dir, "bert_model"))
+        model = tf.keras.models.load_model(os.path.join(models_dir, "lstm_model.h5"))
+        with open(os.path.join(outputs_dir, "tokenizer.pkl"), "rb") as f:
+            tokenizer = pickle.load(f)
         label_classes = np.load(os.path.join(outputs_dir, "label_encoding.npy"), allow_pickle=True)
     return model, tokenizer, label_classes
 
 def expand_contractions(text):
-    """Expand common contractions for better BERT understanding"""
     contractions = {
         "don't": "do not", "doesn't": "does not", "didn't": "did not",
         "won't": "will not", "wouldn't": "would not", "can't": "cannot",
@@ -72,65 +65,27 @@ def expand_contractions(text):
     return text
 
 def preprocess_text(text):
-    """Optimized preprocessing for BERT - keeps more context"""
     if not text:
         return ""
-    
-    # Expand contractions first
     text = expand_contractions(text)
-    
-    # Convert to lowercase
     text = text.lower()
-    
-    # Remove HTML tags
     text = re.sub(r'<.*?>', '', text)
-    
-    # Remove URLs
     text = re.sub(r'http\S+|www\S+|https\S+', '', text, flags=re.MULTILINE)
-    
-    # Remove email addresses
     text = re.sub(r'\S+@\S+', '', text)
-    
-    # Remove extra whitespace
     text = re.sub(r'\s+', ' ', text)
-    
-    # Keep letters, numbers, and basic punctuation (BERT handles punctuation well)
     text = re.sub(r'[^a-zA-Z0-9\s!?.,]', '', text)
-    
-    # Remove leading/trailing whitespace
     text = text.strip()
-    
     return text
 
 def predict_sentiment(text):
     global model, tokenizer, label_classes
     model, tokenizer, label_classes = load_artifacts()
-    
     cleaned = preprocess_text(text)
     if not cleaned:
         return None
-    
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    
-    # BERT Large tokenization
-    encoded = tokenizer(
-        cleaned,
-        truncation=True,
-        padding='max_length',
-        max_length=256,
-        return_tensors='pt'
-    )
-    
-    # Move to device
-    input_ids = encoded['input_ids'].to(device)
-    attention_mask = encoded['attention_mask'].to(device)
-    
-    # BERT Large prediction
-    with torch.no_grad():
-        outputs = model(input_ids=input_ids, attention_mask=attention_mask)
-        logits = outputs.logits
-        probs = torch.softmax(logits, dim=-1).cpu().numpy()[0]
-    
+    sequences = tokenizer.texts_to_sequences([cleaned])
+    padded_sequences = pad_sequences(sequences, maxlen=128, padding='post', truncating='post')
+    probs = model.predict(padded_sequences, verbose=0)[0]
     labels = [str(label).lower() for label in label_classes]
     probabilities = {labels[i]: float(probs[i]) for i in range(len(labels))}
     pred_idx = int(np.argmax(probs))
@@ -143,7 +98,6 @@ def predict_sentiment(text):
         'cleaned': cleaned
     }
 
-# Initialize Flask app
 app = Flask(__name__)
 
 @app.route('/')
@@ -154,10 +108,8 @@ def index():
 def predict():
     data = request.get_json()
     text = data.get('text', '')
-    
     if not text.strip():
         return jsonify({'error': 'Please enter some text'}), 400
-    
     result = predict_sentiment(text)
     if result:
         return jsonify(result)

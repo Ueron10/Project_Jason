@@ -1,13 +1,35 @@
 # K-Means Property Segmentation - Jabodetabek
 
+## Latar Belakang
+
+### Penerapan Algoritma K-Means untuk Segmentasi Properti Berdasarkan Harga dan Luas Bangunan di Jabodetabek
+
+Pertumbuhan sektor properti di wilayah Jabodetabek (Jakarta, Bogor, Depok, Tangerang, dan Bekasi) mengalami peningkatan yang signifikan seiring dengan perkembangan ekonomi dan urbanisasi. Wilayah ini menjadi pusat aktivitas ekonomi dan hunian yang menarik bagi berbagai kalangan masyarakat, mulai dari pekerja dengan pendapatan menengah hingga kelompok berpendapatan tinggi. Keragaman kebutuhan dan kemampuan finansial masyarakat menciptakan pasar properti yang kompleks dengan variasi harga dan spesifikasi bangunan yang sangat beragam.
+
+Dalam konteks ini, pemahaman mengenai segmentasi pasar properti menjadi sangat penting bagi berbagai pihak, termasuk pengembang properti, agen real estate, investor, maupun pembeli potensial. Segmentasi yang akurat memungkinkan pengambilan keputusan yang lebih tepat sasaran dalam hal strategi pemasaran, penetapan harga, pengembangan proyek baru, dan investasi. Namun, dengan volume data properti yang besar dan variabel yang kompleks, pendekatan manual untuk segmentasi menjadi tidak efisien dan cenderung subjektif.
+
+Algoritma K-Means clustering menawarkan solusi berbasis data yang efektif untuk mengatasi tantangan ini. K-Means adalah salah satu algoritma unsupervised learning yang paling populer dan sederhana untuk pengelompokan data. Algoritma ini bekerja dengan membagi data ke dalam K klaster berdasarkan kedekatan jarak antara titik data dengan pusat klaster (centroid). Keunggulan utama K-Means meliputi kemudahan implementasi, efisiensi komputasi, dan kemampuan untuk menangani dataset berukuran besar.
+
+Dalam penelitian ini, algoritma K-Means diterapkan untuk segmentasi properti di Jabodetabek dengan fokus pada dua variabel utama: harga properti (dalam Rupiah) dan luas bangunan (dalam meter persegi). Pemilihan kedua variabel ini didasarkan pada pertimbangan bahwa harga dan ukuran bangunan merupakan faktor paling fundamental yang mempengaruhi nilai dan kelas properti. Harga mencerminkan nilai pasar dan daya beli target konsumen, sedangkan luas bangunan berkorelasi dengan kapasitas hunian dan kenyamanan.
+
+Proses segmentasi dimulai dengan preprocessing data yang meliputi pembersihan data, penanganan missing values, dan penghapusan outlier menggunakan metode IQR (Interquartile Range). Selanjutnya, data dinormalisasi menggunakan StandardScaler untuk memastikan bahwa kedua variabel memiliki skala yang seimbang dalam perhitungan jarak. Penentuan jumlah klaster optimal dilakukan menggunakan metode elbow, yang mengevaluasi inersia (within-cluster sum of squares) untuk berbagai nilai K.
+
+Hasil segmentasi diharapkan dapat mengidentifikasi pola-pola alami dalam data properti yang menggambarkan segmen-segmen pasar yang berbeda. Setiap klaster akan dikarakterisasi berdasarkan statistik deskriptif seperti rata-rata harga, rata-rata luas bangunan, dan jumlah properti dalam klaster tersebut. Berdasarkan karakteristik ini, properti dapat diklasifikasikan ke dalam kategori-kategori yang lebih mudah dipahami, seperti Budget, Standard, Premium, dan Luxury dengan sub-kategori berdasarkan ukuran.
+
+Penerapan pendekatan ini memberikan beberapa manfaat signifikan. Pertama, memberikan pemahaman yang lebih objektif dan berbasis data mengenai struktur pasar properti di Jabodetabek. Kedua, membantu mengidentifikasi segmen pasar yang dominan dan segmen yang kurang terlayani, yang dapat menjadi peluang bagi pengembang properti. Ketiga, memfasilitasi strategi pemasaran yang lebih terarah dengan memahami profil dan preferensi setiap segmen. Keempat, memberikan panduan bagi pembeli potensial dalam memilih properti yang sesuai dengan budget dan kebutuhan ruang.
+
+Secara keseluruhan, penerapan algoritma K-Means untuk segmentasi properti di Jabodetabek merupakan contoh konkret bagaimana machine learning dapat diaplikasikan untuk memecahkan masalah bisnis nyata. Pendekatan ini mengubah data mentah menjadi wawasan yang dapat ditindaklanjuti (actionable insights), mendukung pengambilan keputusan yang lebih informasi dan strategis dalam industri properti.
+
 ## Project Overview
 Implementasi algoritma K-Means untuk melakukan segmentasi properti di wilayah Jabodetabek berdasarkan harga rumah dan luas bangunan.
 
 ## Dataset
-- **Source**: Rumah123 property listings
+- **Source**: Kaggle - Daftar Harga Rumah Jabodetabek
+- **URL**: https://www.kaggle.com/datasets/nafisbarizki/daftar-harga-rumah-jabodetabek
 - **Total Records**: 3,553 properties
 - **Features**: 27 columns including price, building size, location, etc.
 - **Focus Features**: `price_in_rp` dan `building_size_m2`
+- **Data Type**: Secondary data (publik)
 
 ## Directory Structure
 ```
@@ -50,9 +72,9 @@ Implementasi algoritma K-Means untuk melakukan segmentasi properti di wilayah Ja
 - Data normalization using StandardScaler
 
 ### 2. Elbow Method
-- Calculate inertia and silhouette scores for K=2-10
+- Calculate inertia for K=2-10
 - Determine optimal number of clusters
-- Visualize elbow method and silhouette analysis
+- Visualize elbow method analysis
 
 ### 3. K-Means Clustering
 - Load optimal number of clusters

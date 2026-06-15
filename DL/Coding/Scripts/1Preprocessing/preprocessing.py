@@ -2,16 +2,21 @@ import pandas as pd
 import re
 import nltk
 import os
+import numpy as np
+from sklearn.preprocessing import LabelEncoder
+from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+import pickle
 
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 
-# Setup path relative to script location
 script_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.abspath(os.path.join(script_dir, "../../"))
 data_dir = os.path.join(project_root, "Data")
+outputs_dir = os.path.join(project_root, "Outputs")
+os.makedirs(outputs_dir, exist_ok=True)
 
-# Download resource NLTK (hanya jika belum ada)
 try:
     nltk.data.find('tokenizers/punkt')
 except LookupError:
@@ -19,13 +24,14 @@ except LookupError:
     nltk.download('punkt_tab')
     nltk.download('stopwords')
 
-# Load data
+print("="*70)
+print("PREPROCESSING - ALL STEPS")
+print("="*70)
+
+print("\n[1/4] Loading and cleaning data...")
 df = pd.read_csv(os.path.join(data_dir, "threads_reviews.csv"))
 
-# Inisialisasi - Optimized for BERT (keep more context)
-# BERT performs better with less aggressive preprocessing
 std_stopwords = set(stopwords.words('english'))
-# Keep sentiment-carrying words and remove only truly non-informative stopwords
 minimal_stopwords = {'a', 'an', 'the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
                     'of', 'with', 'by', 'from', 'up', 'down', 'out', 'over', 'under',
                     'again', 'further', 'then', 'once', 'here', 'there', 'when', 'where',
@@ -41,7 +47,6 @@ minimal_stopwords = {'a', 'an', 'the', 'and', 'or', 'but', 'in', 'on', 'at', 'to
 stop_words = minimal_stopwords
 
 def expand_contractions(text):
-    """Expand common contractions for better BERT understanding"""
     contractions = {
         "don't": "do not",
         "doesn't": "does not",
@@ -91,45 +96,103 @@ def expand_contractions(text):
     return text
 
 def preprocess_text(text):
-    """Optimized preprocessing for BERT - keeps more context"""
     if pd.isna(text):
         return ""
-    
-    # Expand contractions first
     text = expand_contractions(text)
-    
-    # Convert to lowercase
     text = text.lower()
-    
-    # Remove HTML tags
     text = re.sub(r'<.*?>', '', text)
-    
-    # Remove URLs
     text = re.sub(r'http\S+|www\S+|https\S+', '', text, flags=re.MULTILINE)
-    
-    # Remove email addresses
     text = re.sub(r'\S+@\S+', '', text)
-    
-    # Remove extra whitespace
     text = re.sub(r'\s+', ' ', text)
-    
-    # Keep letters, numbers, and basic punctuation (BERT handles punctuation well)
     text = re.sub(r'[^a-zA-Z0-9\s!?.,]', '', text)
-    
-    # Remove leading/trailing whitespace
     text = text.strip()
-    
     return text
 
-# Terapkan preprocessing
-print("Preprocessing text data...")
 df['clean_text'] = df['review_description'].apply(preprocess_text)
-
-# Simpan hasil
-df.to_csv(os.path.join(data_dir, "threads_reviews_clean.csv"), index=False, encoding='utf-8-sig')
-
-print("Preprocessing selesai!")
 print(f"  Total samples: {len(df)}")
-print(f"  Output: threads_reviews_clean.csv")
-print("\nSample:")
-print(df[['review_description', 'clean_text', 'rating']].head())
+
+print("\n[2/4] Preparing labels...")
+def map_rating_to_sentiment(rating):
+    if pd.isna(rating):
+        return 'neutral'
+    rating = int(rating)
+    if rating <= 2:
+        return 'negative'
+    elif rating == 3:
+        return 'neutral'
+    else:
+        return 'positive'
+
+df['sentiment'] = df['rating'].apply(map_rating_to_sentiment)
+
+distribusi = df['sentiment'].value_counts()
+print("Label distribution:")
+for label in ['positive', 'negative', 'neutral']:
+    if label in distribusi:
+        pct = (distribusi[label] / len(df)) * 100
+        print(f"  {label:10}: {distribusi[label]:5d} samples ({pct:5.1f}%)")
+
+print("\n[3/4] Tokenizing...")
+max_words = 10000
+max_length = 128
+
+tokenizer = Tokenizer(num_words=max_words, oov_token='<OOV>')
+tokenizer.fit_on_texts(df['clean_text'].fillna("").astype(str).tolist())
+
+sequences = tokenizer.texts_to_sequences(df['clean_text'].fillna("").astype(str).tolist())
+padded_sequences = pad_sequences(sequences, maxlen=max_length, padding='post', truncating='post')
+
+print(f"  Max words: {max_words}")
+print(f"  Max sequence length: {max_length}")
+print(f"  Vocabulary size: {len(tokenizer.word_index)}")
+
+print("\n[4/4] Splitting data...")
+y_text = df['sentiment'].values
+
+label_encoder = LabelEncoder()
+y = label_encoder.fit_transform(y_text)
+
+desired_order = ['negative', 'neutral', 'positive']
+if len(label_encoder.classes_) == 3:
+    label_mapping = {label: idx for idx, label in enumerate(desired_order)}
+    y = np.array([label_mapping[label] for label in y_text])
+    np.save(os.path.join(outputs_dir, "label_encoding.npy"), np.array(desired_order))
+    print(f"Label order: {desired_order}")
+else:
+    np.save(os.path.join(outputs_dir, "label_encoding.npy"), label_encoder.classes_)
+
+train_ratio = 0.8
+np.random.seed(42)
+indices = np.random.permutation(len(padded_sequences))
+
+train_size = int(len(padded_sequences) * train_ratio)
+train_idx = indices[:train_size]
+test_idx = indices[train_size:]
+
+X_train_sequences, X_test_sequences = padded_sequences[train_idx], padded_sequences[test_idx]
+y_train, y_test = y[train_idx], y[test_idx]
+
+np.save(os.path.join(outputs_dir, "X_train_sequences.npy"), X_train_sequences)
+np.save(os.path.join(outputs_dir, "X_test_sequences.npy"), X_test_sequences)
+np.save(os.path.join(outputs_dir, "y_train.npy"), y_train)
+np.save(os.path.join(outputs_dir, "y_test.npy"), y_test)
+with open(os.path.join(outputs_dir, "tokenizer.pkl"), "wb") as f:
+    pickle.dump(tokenizer, f)
+
+print(f"  Training: {len(X_train_sequences):,} samples")
+print(f"  Testing:  {len(X_test_sequences):,} samples")
+
+df.to_csv(os.path.join(data_dir, "threads_reviews_labeled.csv"), index=False, encoding='utf-8-sig')
+
+print("\n" + "="*70)
+print("PREPROCESSING COMPLETE")
+print("="*70)
+print("Output files:")
+print("  - X_train_sequences.npy")
+print("  - X_test_sequences.npy")
+print("  - y_train.npy")
+print("  - y_test.npy")
+print("  - label_encoding.npy")
+print("  - tokenizer.pkl")
+print("  - threads_reviews_labeled.csv")
+print("="*70)
