@@ -38,7 +38,7 @@ ENV/
 *.ipynb
 
 # Data files (large files)
-Coding/Data/*.csv
+Coding/Data/*threads_reviews_labeled.csv
 Coding/Outputs/*.npy
 Coding/Outputs/*.pkl
 Coding/Models/*.keras
